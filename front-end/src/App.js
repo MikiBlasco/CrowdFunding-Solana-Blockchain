@@ -3,6 +3,8 @@ import idl from "./idl.json"
 import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
 import { Program, AnchorProvider, web3, utils, BN } from '@project-serum/anchor';
 import { useEffect, useState } from 'react';
+import { Buffer } from 'buffer';
+window.Buffer = Buffer;
 
 const programID = new PublicKey(idl.metadata.address);
 console.log(programID)
@@ -90,7 +92,7 @@ const App = () => {
       const program = new Program(idl, programID, provider)
       const [campaign] = PublicKey.findProgramAddressSync(
       [
-        utils.bytes.utf8.encode("CAMPAIN_DEMO"),
+        utils.bytes.utf8.encode("CAMPAIGN_DEMO"),
         provider.wallet.publicKey.toBuffer(),
       ],
       program.programId, //calculat specific address for the campaign account
@@ -102,10 +104,9 @@ const App = () => {
                   campaign,
                   user: provider.wallet.publicKey,
                   systemProgram: SystemProgram.programId
-              })
+              }).rpc()
 
       console.log('Created a new Campaign w/ addfress: ', campaign.toString())
-      console.log('opts.preflightComitment', opts.preflightComitment)
     } catch(error) {
       console.error('Error creating Campaign Account', error)
     }
