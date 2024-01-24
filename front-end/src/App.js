@@ -7,7 +7,6 @@ import { Buffer } from 'buffer';
 window.Buffer = Buffer;
 
 const programID = new PublicKey(idl.metadata.address);
-console.log(programID)
 const network = clusterApiUrl("devnet");
 const opts = {
   preflightComitment: "processed",
@@ -63,28 +62,55 @@ const App = () => {
     }
   };
 
-  const getCampaigns = async () => {
+  // const getCampaigns = async () => {
 
-    try{
+  //   try{
+  //     const connection = new Connection(network, opts.preflightComitment);
+  //     const provider = getProvider();
+  //     const program = new Program(idl, programID, provider);
+  //     console.log('program =>', program)
+  //     Promise.all(
+  //       (await connection.getProgramAccounts(programID)).map(
+  //         async (campaign) => ({
+  //           ...(await program.account.campaign.fetch(campaign.pubkey)),
+  //           pubkey: campaign.pubkey,
+  //         })
+  //       )
+  //     ).then((campaigns) => setCampaigns(campaigns));
+  //     console.log('campaigns List =>' , campaigns)
+  //   } catch(error) {
+  //     console.error('Error fetching Campaigns', error)
+  //   }
+  // }
+  const getCampaigns = async () => {
+    try {
       const connection = new Connection(network, opts.preflightComitment);
-      console.log(connection)
       const provider = getProvider();
       const program = new Program(idl, programID, provider);
-      console.log('programID ', programID);
-      const programAccounts = await connection.getProgramAccounts(programID, opts.preflightComitment);
-      console.log(programAccounts)
-      const campaignsList = await Promise.all(
-        programAccounts.map(async (campaign) => ({
-            ...(await program.account.campaign.fetch(campaign.pubkey)),
-            pubkey: campaign.publicKey,
-        }))
+  
+      // Using Promise.allSettled to wait for all promises to resolve or reject
+      const campaignPromises = (await connection.getProgramAccounts(programID)).map(
+        async (campaign) => ({
+          ...(await program.account.campaign.fetch(campaign.pubkey)),
+          pubkey: campaign.pubkey,
+        })
       );
-      setCampaigns(campaignsList)
-      console.log('campaigns', campaigns)
-    } catch(error) {
-      console.error('Error fetching Campaigns', error)
+  
+      Promise.allSettled(campaignPromises)
+        .then((results) => {
+          // Filter out successfully resolved promises and get the campaigns
+          const successfulResults = results.filter((result) => result.status === 'fulfilled');
+          const campaignsData = successfulResults.map((result) => result.value);
+          setCampaigns(campaignsData);
+          console.log('campaigns List =>', campaignsData);
+        })
+        .catch((error) => {
+          console.error('Error fetching Campaigns', error);
+        });
+    } catch (error) {
+      console.error('Error fetching Campaigns', error);
     }
-  }
+  };
 
   const createCampaign = async () => {
     try {
@@ -92,7 +118,7 @@ const App = () => {
       const program = new Program(idl, programID, provider)
       const [campaign] = PublicKey.findProgramAddressSync(
       [
-        utils.bytes.utf8.encode("CAMPAIGN_DEMO"),
+        utils.bytes.utf8.encode("CAMPAIGN_DEMO1"),
         provider.wallet.publicKey.toBuffer(),
       ],
       program.programId, //calculat specific address for the campaign account
@@ -115,21 +141,37 @@ const App = () => {
   const renderNotConnectedContainer = () => (
     <button onClick={connectWallet}>Connect to Wallet</button>
   )
+  // const renderConnectedContainer = () => (
+  //   <>
+  //   <button onClick={createCampaign}>Create Campaign</button>
+  //   <button onClick={getCampaigns}>Get the list of Campaigns</button>
+  //   <br />
+  //   {campaigns.map(campaign => {
+  //     <>
+  //     <p>Campaign ID: {campaign.pubkey}</p>
+  //     <p>Balance: {(campaign.amountDonated / web3.LAMPORTS_PER_SOL)}</p>
+  //     <p>{campaign.name}</p>
+  //     <p>{campaign.description}</p>
+  //     </>
+  //   })}
+  //   </>
+  // )
+
   const renderConnectedContainer = () => (
     <>
-    <button onClick={createCampaign}>Create Campaign</button>
-    <button onClick={getCampaigns}>Get the list of Campaigns</button>
-    <br />
-    {campaigns.map(campaign => {
-      <>
-      <p>Campaign ID: {campaign.pubkey.toString()}</p>
-      <p>Balance: {(campaign.amountDonated / web3.LAMPORTS_PER_SOL).toString()}</p>
-      <p>{campaign.name}</p>
-      <p>{campaign.description}</p>
-      </>
-    })}
+      <button onClick={createCampaign}>Create Campaign</button>
+      <button onClick={getCampaigns}>Get the list of Campaigns</button>
+      <br />
+      {campaigns.map((campaign) => (
+        <div key={campaign.pubkey.toString()}> {/* Convert PublicKey to string */}
+          <p>Campaign ID: {campaign.pubkey.toString()}</p>
+          <p>Balance: {(campaign.amountDonated / web3.LAMPORTS_PER_SOL)}</p>
+          <p>{campaign.name}</p>
+          <p>{campaign.description}</p>
+        </div>
+      ))}
     </>
-  )
+  );
 
   useEffect(() => {
 

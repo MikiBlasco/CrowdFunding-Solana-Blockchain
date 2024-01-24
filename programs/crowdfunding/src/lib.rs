@@ -53,7 +53,7 @@ pub mod crowdfunding {
 //this is a Macro that creates context#
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer=user, space=9000, seeds=[b"CAMPAIGN_DEMO".as_ref(), user.key().as_ref()], bump)] 
+    #[account(init, payer=user, space=9000, seeds=[b"CAMPAIGN_DEMO1".as_ref(), user.key().as_ref()], bump)] 
     pub campaign: Account<'info, Campaign>,
     #[account(mut)] //the user can be changed 
     pub user: Signer<'info>,
