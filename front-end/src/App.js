@@ -136,6 +136,45 @@ const App = () => {
     } catch(error) {
       console.error('Error creating Campaign Account', error)
     }
+  };
+
+  const donate = async (publicKey) => {
+    try {
+      const provider = getProvider()
+      const program = new Program(idl, programID, provider)
+
+      await program.methods
+      .donate(new BN(0.2 * web3.LAMPORTS_PER_SOL))
+      .accounts({
+        campaign: publicKey,
+        user: provider.wallet.publicKey,
+        systemProgram: SystemProgram.programId
+      }).rpc()
+
+      console.log('Donated some money to:', publicKey.toString())
+      getCampaigns();
+    } catch (error) {
+      console.error('Error donating', error)
+    }
+  };
+
+  const withdraw = async (publicKey) => {
+    try {
+      const provider = getProvider()
+      const program = new Program(idl, programID, provider)
+
+      await program.methods
+      .withdraw(new BN(0.2 * web3.LAMPORTS_PER_SOL))
+      .accounts({
+        campaign: publicKey,
+        user: provider.wallet.publicKey,
+      }).rpc()
+
+      console.log('Withdraw some money from:', publicKey.toString())
+      getCampaigns();
+    } catch (error) {
+      console.error('Error withdrawing', error)
+    }
   }
 
   const renderNotConnectedContainer = () => (
@@ -168,6 +207,8 @@ const App = () => {
           <p>Balance: {(campaign.amountDonated / web3.LAMPORTS_PER_SOL)}</p>
           <p>{campaign.name}</p>
           <p>{campaign.description}</p>
+          <button onClick={() => donate(campaign.pubkey) }>¡Click to Donate!</button>
+          <button onClick={() => withdraw(campaign.pubkey) }>¡Click to Withdraw!</button>
         </div>
       ))}
     </>
